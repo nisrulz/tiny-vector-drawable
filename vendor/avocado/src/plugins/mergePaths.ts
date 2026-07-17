@@ -1,0 +1,79 @@
+import { intersects, js2path, path2js } from './_path';
+
+import { JsApi } from '../lib/jsapi';
+import { Plugin } from './_types';
+
+export interface Params {
+  collapseRepeated: boolean;
+  leadingZero: boolean;
+  negativeExtraSpace: boolean;
+}
+
+/**
+ * Merge multiple paths into one.
+ */
+function fn(item: JsApi, params: Params) {
+  if (!item.isElem() || item.isEmpty()) {
+    return item;
+  }
+
+  let prevContentItem: JsApi;
+  let prevContentItemKeys: string[];
+
+  // TODO: figure out how to deal with clip paths!
+  item.content = item.content.filter(contentItem => {
+    if (
+      prevContentItem &&
+      prevContentItem.isElem('path') &&
+      !prevContentItem.hasAttr('android:name') &&
+      prevContentItem.hasAttr('android:pathData') &&
+      contentItem.isElem('path') &&
+      !contentItem.hasAttr('android:name') &&
+      contentItem.hasAttr('android:pathData')
+    ) {
+      if (!prevContentItemKeys) {
+        prevContentItemKeys = Object.keys(prevContentItem.attrs);
+      }
+      const contentItemAttrs = Object.keys(contentItem.attrs);
+      const equalData =
+        prevContentItemKeys.length === contentItemAttrs.length &&
+        contentItemAttrs.every(key => {
+          return (
+            key === 'android:pathData' ||
+            (prevContentItem.hasAttr(key) &&
+              prevContentItem.attr(key).value === contentItem.attr(key).value)
+          );
+        });
+      const prevPathJS = path2js(prevContentItem);
+      const curPathJS = path2js(contentItem);
+      if (equalData && !intersects(prevPathJS, curPathJS)) {
+        // Guard: Android crashes when a single android:pathData value exceeds
+        // ~3000 characters. Skip the merge if the combined path would surpass
+        // that limit, keeping the paths as separate elements instead.
+        const prevLen = (prevContentItem.attr('android:pathData').value || '').length;
+        const curLen = (contentItem.attr('android:pathData').value || '').length;
+        if (prevLen + curLen <= 3000) {
+          js2path(prevContentItem, prevPathJS.concat(curPathJS), params);
+          return false;
+        }
+      }
+    }
+    prevContentItem = contentItem;
+    prevContentItemKeys = undefined;
+    return true;
+  });
+
+  return item;
+}
+
+export const mergePaths: Plugin<Params> = {
+  type: 'perItem',
+  active: true,
+  description: 'merges multiple paths into one, if possible',
+  params: {
+    collapseRepeated: true,
+    leadingZero: false,
+    negativeExtraSpace: true,
+  },
+  fn,
+};

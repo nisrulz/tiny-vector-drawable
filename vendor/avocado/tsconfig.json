@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "alwaysStrict": true,
+    "declaration": true,
+    "lib": ["es2015"],
+    "module": "commonjs",
+    "noImplicitAny": true,
+    // TODO: reenable strict null checks at some point
+    "strictNullChecks": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "outDir": "./dist",
+    "removeComments": true,
+    "sourceMap": true,
+    "strictFunctionTypes": true,
+    "target": "es5"
+  },
+  "include": ["src/**/*"]
+}
