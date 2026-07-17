@@ -2,6 +2,8 @@
 
 _Your vector drawables, but make them tiny._
 
+![Screenshot](screenshot.png)
+
 Shrink Android VectorDrawable and AnimatedVectorDrawable XML right in your
 browser. Drop an `.xml` file, get an optimized one back, download it. Nothing
 gets uploaded.
@@ -25,4 +27,3 @@ to parse.
 
 - Features, privacy, and license: [ABOUT.md](ABOUT.md)
 - Build and architecture: [DEVELOPMENT.md](DEVELOPMENT.md)
-
