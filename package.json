@@ -1,0 +1,16 @@
+{
+  "name": "tiny-vector-drawable",
+  "version": "1.0.0",
+  "description": "A TinyPNG-style web app for optimizing Android VectorDrawable and AnimatedVectorDrawable XML files, running entirely in the browser.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build:bundle": "node build/bundle.js",
+    "build": "node build/bundle.js",
+    "serve": "npx --yes serve .",
+    "test:parity": "node test/parity.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0"
+  }
+}
