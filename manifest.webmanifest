@@ -1,7 +1,7 @@
 {
   "name": "Tiny Vector Drawable",
   "short_name": "TinyVD",
-  "description": "Optimize Android VectorDrawable and AnimatedVectorDrawable XML files entirely in your browser.",
+  "description": "Your vector drawables, but make them tiny. Optimize Android VectorDrawable XML in your browser.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

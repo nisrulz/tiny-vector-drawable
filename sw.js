@@ -1,6 +1,6 @@
 // Tiny Vector Drawable — service worker.
 // Caches the app shell so the tool works offline and is installable as a PWA.
-const CACHE = 'tvd-v2';
+const CACHE = 'tvd-v3';
 const ASSETS = [
   '.',
   'index.html',
