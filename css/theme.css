@@ -1,0 +1,44 @@
+:root {
+  --bg: #0f1419;
+  --bg-elev: #161c24;
+  --bg-elev-2: #1d252f;
+  --border: #2a3340;
+  --text: #e6edf3;
+  --text-dim: #9aa7b4;
+  --accent: #0f9d58;
+  --accent-soft: rgba(15, 157, 88, 0.14);
+  --danger: #f85149;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+:root[data-theme="light"] {
+  --bg: #f6f8fa;
+  --bg-elev: #ffffff;
+  --bg-elev-2: #f0f3f6;
+  --border: #d8dee4;
+  --text: #1f2328;
+  --text-dim: #59636e;
+  --accent-soft: rgba(15, 157, 88, 0.12);
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* System preference only applies when the user has not chosen a theme. */
+:root:not([data-theme]) {
+  color-scheme: dark light;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg: #f6f8fa;
+    --bg-elev: #ffffff;
+    --bg-elev-2: #f0f3f6;
+    --border: #d8dee4;
+    --text: #1f2328;
+    --text-dim: #59636e;
+    --accent-soft: rgba(15, 157, 88, 0.12);
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  }
+}

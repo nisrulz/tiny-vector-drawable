@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f9d58" />
+  <title>Tiny Vector Drawable: optimize Android vector XML in your browser</title>
+  <meta name="description" content="Optimize Android VectorDrawable and AnimatedVectorDrawable XML in your browser. Nothing is uploaded." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+  <div class="device-notice" role="alert">
+    <span class="device-notice-icon" aria-hidden="true">🖥️</span>
+    <p>Tiny Vector Drawable is built for desktop and tablet. Please open this site on a larger screen to optimize your vector drawables.</p>
+  </div>
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">🥑</span>
+      <span class="brand-name">Tiny Vector Drawable</span>
+    </div>
+    <button id="themeToggle" class="btn btn-ghost theme-toggle" type="button" aria-label="Toggle theme" title="Toggle light/dark theme">🌓</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Your vector drawables, but make them tiny.</h1>
+    </section>
+
+    <section
+      id="dropzone"
+      class="dropzone"
+      tabindex="0"
+      role="button"
+      aria-label="Upload vector drawable XML files"
+    >
+      <input id="fileInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden />
+      <div class="dropzone-inner">
+        <div class="dropzone-icon" aria-hidden="true">⬇️</div>
+        <p class="dropzone-title">Drop vector drawable <code>.xml</code> files here</p>
+        <p class="dropzone-hint">or click to browse · batch supported</p>
+        <p class="dropzone-info">Output is an optimized VectorDrawable or AnimatedVectorDrawable <code>.xml</code>.</p>
+      </div>
+    </section>
+
+    <div id="toolbar" class="toolbar" hidden>
+      <div class="opt opt-inline">
+        <div id="formatSelect" class="radio-group" role="radiogroup" aria-label="Output format">
+          <label class="radio"><input type="radio" name="format" value="pretty" checked /> Pretty (readable)</label>
+          <label class="radio"><input type="radio" name="format" value="min" /> Minified (smallest)</label>
+        </div>
+      </div>
+      <span id="summary" class="summary"></span>
+      <div class="toolbar-actions">
+        <button id="downloadAll" class="btn btn-primary" type="button" disabled>Download all (.zip)</button>
+        <button id="clearAll" class="btn btn-ghost" type="button">Clear</button>
+      </div>
+    </div>
+
+    <section id="results" class="results" aria-live="polite"></section>
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      Open source under MIT · 🔒 Runs locally, nothing uploaded.
+      <button id="creditBtn" class="credit-link" type="button" aria-expanded="false" aria-controls="creditPop">Credits</button>
+    </p>
+    <div id="creditPop" class="credit-pop" role="dialog" aria-label="Credits" hidden>
+      <button id="creditClose" class="credit-close" type="button" aria-label="Close credits">×</button>
+      <p>
+        Optimizer <a href="https://github.com/alexjlockwood/avocado" rel="noopener" target="_blank">avocado</a> by Alex Lockwood, a vendored and modified version.
+      </p>
+    </div>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
