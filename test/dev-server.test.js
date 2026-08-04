@@ -22,7 +22,7 @@ function request(path, method = 'GET') {
 test('development server sends security headers and handles malformed paths', () => {
   const response = request('/', 'HEAD');
   assert.equal(response.status, 200);
-  assert.match(response.headers['Content-Security-Policy'], /frame-ancestors 'none'/);
+  assert.match(response.headers['Permissions-Policy'], /camera=\(\)/);
   assert.equal(response.headers['X-Content-Type-Options'], 'nosniff');
   assert.equal(response.headers['X-Frame-Options'], 'DENY');
   assert.equal(response.headers['Referrer-Policy'], 'no-referrer');

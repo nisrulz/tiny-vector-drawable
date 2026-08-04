@@ -36,13 +36,13 @@ test('service worker precaches files that exist', async () => {
 test('service worker deletes only stale Tiny Vector Drawable caches', async () => {
   const deleted = [];
   globalThis.caches = {
-    keys: async () => ['other-app-v1', 'tvd-v4', 'tvd-v5'],
+    keys: async () => ['other-app-v1', 'tvd-v5', 'tvd-v6'],
     delete: async (key) => { deleted.push(key); },
   };
   let activation;
   listeners.activate({ waitUntil(promise) { activation = promise; } });
   await activation;
-  assert.deepEqual(deleted, ['tvd-v4']);
+  assert.deepEqual(deleted, ['tvd-v5']);
 });
 
 test('service worker reads from the current named cache', async () => {
@@ -58,7 +58,7 @@ test('service worker reads from the current named cache', async () => {
   let response;
   listeners.fetch({ request, respondWith(promise) { response = promise; } });
   assert.equal(await (await response).text(), 'cached');
-  assert.equal(opened, 'tvd-v5');
+  assert.equal(opened, 'tvd-v6');
   assert.equal(matched, request.url);
 });
 

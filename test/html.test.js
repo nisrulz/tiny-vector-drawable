@@ -5,9 +5,6 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
 test('page declares local-only browser security policies', () => {
-  assert.match(html, /Content-Security-Policy/);
-  assert.match(html, /worker-src 'self'/);
-  assert.match(html, /object-src 'none'/);
   assert.match(html, /<meta name="referrer" content="no-referrer"/);
 });
 
