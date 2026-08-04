@@ -47,26 +47,35 @@ export function path2js(path: JsApi) {
   const pathData: Array<{ instruction: string; data?: number[] }> = [];
   let instruction: string;
   let startMoveto = false;
+  let awaitingParameters = false;
+
+  function invalidPathData(): never {
+    throw new Error('Invalid android:pathData.');
+  }
 
   // splitting path string into array like ['M', '10 50', 'L', '20 30']
   path
     .attr('android:pathData')
     .value.split(regPathInstructions)
     .forEach(data => {
-      if (!data) {
+      if (!data || !data.trim()) {
         return;
       }
       if (!startMoveto) {
         if (data === 'M' || data === 'm') {
           startMoveto = true;
         } else {
-          return;
+          invalidPathData();
         }
       }
 
       // Instruction item.
       if (regPathInstructions.test(data)) {
+        if (awaitingParameters) {
+          invalidPathData();
+        }
         instruction = data;
+        awaitingParameters = instruction !== 'Z' && instruction !== 'z';
 
         // Z - instruction w/o data.
         if (instruction === 'Z' || instruction === 'z') {
@@ -74,12 +83,40 @@ export function path2js(path: JsApi) {
         }
       } else {
         // Data item.
+        if (!instruction || instruction === 'Z' || instruction === 'z') {
+          invalidPathData();
+        }
         const matchedData = data.match(regPathData);
         if (!matchedData) {
-          return;
+          invalidPathData();
+        }
+        const remainder = data
+          .replace(new RegExp(regPathData.source, 'g'), '')
+          .replace(/[\s,]/g, '');
+        if (remainder) {
+          invalidPathData();
         }
 
         const matchedNumData = matchedData.map(Number);
+        if (matchedNumData.some(value => !Number.isFinite(value))) {
+          invalidPathData();
+        }
+        const params = paramsLength[instruction];
+        if (!params || matchedNumData.length % params !== 0) {
+          invalidPathData();
+        }
+        awaitingParameters = false;
+
+        if (instruction === 'A' || instruction === 'a') {
+          for (let i = 0; i < matchedNumData.length; i += params) {
+            if (
+              ![0, 1].includes(matchedNumData[i + 3]) ||
+              ![0, 1].includes(matchedNumData[i + 4])
+            ) {
+              invalidPathData();
+            }
+          }
+        }
 
         // Subsequent moveto pairs of coordinates are threated as implicit lineto commands
         // http://www.w3.org/TR/SVG/paths.html#PathDataMovetoCommands
@@ -96,6 +133,10 @@ export function path2js(path: JsApi) {
         }
       }
     });
+
+  if (awaitingParameters) {
+    invalidPathData();
+  }
 
   // First moveto is actually absolute. Subsequent coordinates were separated above.
   if (pathData.length && pathData[0].instruction === 'm') {

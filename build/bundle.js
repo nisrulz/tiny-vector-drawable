@@ -1,12 +1,15 @@
-const esbuild = require('esbuild');
-const fs = require('fs');
-const path = require('path');
+import esbuild from 'esbuild';
+import { existsSync, mkdirSync, statSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const outDir = path.join(__dirname, '..', 'lib');
-const outFile = path.join(outDir, 'avocado.bundle.js');
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-if (!fs.existsSync(outDir)) {
-  fs.mkdirSync(outDir, { recursive: true });
+const outDir = join(__dirname, '..', 'lib');
+const outFile = join(outDir, 'avocado.bundle.js');
+
+if (!existsSync(outDir)) {
+  mkdirSync(outDir, { recursive: true });
 }
 
 // A tiny shim for Node's `os` module used by avocado's js2xml (only `os.EOL`).
@@ -15,9 +18,17 @@ export const EOL = '\\n';
 export default { EOL: '\\n' };
 `;
 
+// SAX only uses StringDecoder for Node Buffer streams. Browser input is always
+// a string, but the CommonJS require still needs to resolve during bundling.
+const stringDecoderShim = `
+export class StringDecoder {
+  write(value) { return String(value); }
+}
+`;
+
 async function main() {
   await esbuild.build({
-    entryPoints: [path.join(__dirname, 'entry.js')],
+    entryPoints: [join(__dirname, 'entry.js')],
     bundle: true,
     format: 'esm',
     platform: 'browser',
@@ -41,11 +52,19 @@ async function main() {
             contents: osShim,
             loader: 'js',
           }));
+          build.onResolve({ filter: /^string_decoder$/ }, () => ({
+            path: 'string-decoder-shim',
+            namespace: 'string-decoder-shim',
+          }));
+          build.onLoad({ filter: /.*/, namespace: 'string-decoder-shim' }, () => ({
+            contents: stringDecoderShim,
+            loader: 'js',
+          }));
         },
       },
     ],
   });
-  const size = fs.statSync(outFile).size;
+  const size = statSync(outFile).size;
   console.log(`Built ${outFile} (${(size / 1024).toFixed(1)} KB)`);
 }
 

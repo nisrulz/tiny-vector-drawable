@@ -4,13 +4,23 @@
   "description": "A TinyPNG-style web app for optimizing Android VectorDrawable and AnimatedVectorDrawable XML files, running entirely in the browser.",
   "license": "MIT",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build:bundle": "node build/bundle.js",
     "build": "node build/bundle.js",
-    "serve": "npx --yes serve .",
-    "test:parity": "node test/parity.js"
+    "serve": "node scripts/dev-server.mjs",
+    "test": "node --test test/*.test.js",
+    "test:parity": "node test/parity.js",
+    "test:all": "npm test && npm run test:parity"
   },
   "devDependencies": {
-    "esbuild": "^0.21.0"
+    "esbuild": "0.28.1",
+    "sax": "1.2.4"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
   }
 }

@@ -1,4 +1,4 @@
-.PHONY: help build serve test parity install all
+.PHONY: help build serve test parity verify install all
 
 help: ## Show this help
 	@echo "Tiny Vector Drawable - available commands:"
@@ -12,12 +12,16 @@ build: ## Build the avocado optimizer bundle
 serve: ## Serve locally over http (for ES modules + SW)
 	npm run serve
 
-test: ## Run the parity test against avocado CLI
+test: ## Run the unit tests
+	npm test
+
+parity: ## Run the parity test against committed fixtures
 	npm run test:parity
 
-parity: test ## Alias for test
+verify: ## Run unit tests then the parity test
+	npm run test:all
 
 install: ## Install dependencies
-	npm install
+	npm ci --ignore-scripts
 
-all: install build test ## Install, build, and verify
+all: install build verify ## Install, build, and verify everything

@@ -90,51 +90,24 @@ main {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Mobile gate: phones only see a notice; the app is hidden. */
-.device-notice {
-  display: none;
-  position: fixed;
-  inset: 0;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 24px;
-  text-align: center;
-  color: var(--text);
-  background: var(--bg);
-}
-
-.device-notice-icon {
-  font-size: 2.4rem;
-}
-
-.device-notice p {
-  margin: 0;
-  max-width: 420px;
-  line-height: 1.55;
-  color: var(--text-dim);
-}
-
 @media (max-width: 600px) {
-
-  html,
-  body {
-    overflow: hidden;
-    height: 100%;
-  }
-
-  .device-notice {
-    display: flex;
-  }
-
-  .site-header,
-  main,
   .site-footer {
-    display: none;
+    position: static;
   }
 
   body {
     padding-bottom: 0;
+  }
+
+  main {
+    padding: 22px 14px 36px;
+  }
+
+  .site-header {
+    padding: 12px 14px;
+  }
+
+  .site-footer {
+    padding: 16px 14px;
   }
 }

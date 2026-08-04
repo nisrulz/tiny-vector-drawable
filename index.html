@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="referrer" content="no-referrer" />
   <meta name="theme-color" content="#0f9d58" />
-  <title>Tiny Vector Drawable: optimize Android vector XML in your browser</title>
+  <title>Your vector drawables, but make them tiny.</title>
   <meta name="description" content="Your vector drawables, but make them tiny. Optimize Android VectorDrawable and AnimatedVectorDrawable XML in your browser." />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
@@ -15,10 +17,6 @@
   <link rel="stylesheet" href="css/components.css" />
 </head>
 <body>
-  <div class="device-notice" role="alert">
-    <span class="device-notice-icon" aria-hidden="true">🖥️</span>
-    <p>Tiny Vector Drawable is built for desktop and tablet. Please open this site on a larger screen to optimize your vector drawables.</p>
-  </div>
   <header class="site-header">
     <div class="brand"><img src="icons/icon.svg" alt="" class="brand-icon" /> Tiny Vector Drawable</div>
     <button id="themeToggle" class="btn btn-ghost theme-toggle" type="button" aria-label="Toggle theme" title="Toggle light/dark theme">🌓</button>
@@ -29,32 +27,34 @@
       <h1>Your vector drawables, but make them tiny.</h1>
     </section>
 
+    <section class="format-options" aria-labelledby="formatLabel">
+      <span id="formatLabel">Output format</span>
+      <div id="formatSelect" class="radio-group" role="radiogroup" aria-label="Output format">
+        <label class="radio"><input type="radio" name="format" value="min" checked /> Minified (smallest)</label>
+        <label class="radio"><input type="radio" name="format" value="pretty" /> Pretty (readable)</label>
+      </div>
+    </section>
+
     <section
       id="dropzone"
       class="dropzone"
       tabindex="0"
       role="button"
-      aria-label="Upload vector drawable XML files"
+      aria-label="Choose local vector drawable XML files"
     >
       <input id="fileInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden />
       <div class="dropzone-inner">
         <div class="dropzone-icon" aria-hidden="true">⬇️</div>
         <p class="dropzone-title">Drop vector drawable <code>.xml</code> files here</p>
-        <p class="dropzone-hint">or click to browse · batch supported</p>
+        <p class="dropzone-hint">or click to browse · up to 100 files and 25 MB total</p>
         <p class="dropzone-info">Output is an optimized VectorDrawable or AnimatedVectorDrawable <code>.xml</code>.</p>
       </div>
     </section>
 
     <div id="toolbar" class="toolbar" hidden>
-      <div class="opt opt-inline">
-        <div id="formatSelect" class="radio-group" role="radiogroup" aria-label="Output format">
-          <label class="radio"><input type="radio" name="format" value="pretty" checked /> Pretty (readable)</label>
-          <label class="radio"><input type="radio" name="format" value="min" /> Minified (smallest)</label>
-        </div>
-      </div>
       <span id="summary" class="summary"></span>
       <div class="toolbar-actions">
-        <button id="downloadAll" class="btn btn-primary" type="button" disabled>Download all (.zip)</button>
+        <button id="downloadAll" class="btn btn-primary" type="button" disabled>Download optimized (.zip)</button>
         <button id="clearAll" class="btn btn-ghost" type="button">Clear</button>
       </div>
     </div>

@@ -4,3 +4,7 @@ coverage/
 *.log
 .DS_Store
 .trash/
+
+# Parity test debug output (written only on failure)
+test/*.actual.xml
+test/*.expected-debug.xml
