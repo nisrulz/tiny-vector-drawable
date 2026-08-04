@@ -99,3 +99,11 @@ test('makeZip round-trips through the parse for a single empty file', async () =
   assert.equal(zip.locals[0].size, 0);
   assert.equal(zip.locals[0].crc, 0);
 });
+
+test('makeZip rejects classic ZIP limit overflows', () => {
+  assert.throws(() => makeZip({ length: 0x10000 }), /65,535 entries/);
+  assert.throws(
+    () => makeZip([{ name: 'a'.repeat(0x10000), data: '' }]),
+    /filename is too long/,
+  );
+});

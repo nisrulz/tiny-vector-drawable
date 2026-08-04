@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Item, STATUS } from '../js/model.js';
+import { Item, STATUS, summarizeItems } from '../js/model.js';
 
 function makeItem() {
   return new Item({ id: 'abc', name: 'icon.xml', original: '<vector/>' });
@@ -53,4 +53,20 @@ test('reset clears state and bumps the token (invalidates stale runs)', () => {
   assert.equal(item.token, 1);
   item.reset();
   assert.equal(item.token, 2);
+});
+
+test('summarizeItems counts pending, successful, and failed items', () => {
+  const queued = makeItem();
+  const optimizing = makeItem();
+  optimizing.markOptimizing();
+  const done = makeItem();
+  done.succeed('<vector/>');
+  const failed = makeItem();
+  failed.fail('bad XML');
+
+  assert.deepEqual(summarizeItems([queued, optimizing, done, failed]), {
+    pending: 2,
+    successful: 1,
+    failed: 1,
+  });
 });

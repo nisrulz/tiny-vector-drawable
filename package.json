@@ -5,6 +5,9 @@
   "license": "MIT",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build:bundle": "node build/bundle.js",
     "build": "node build/bundle.js",
@@ -14,7 +17,8 @@
     "test:all": "npm test && npm run test:parity"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1"
+    "esbuild": "0.28.1",
+    "sax": "1.2.4"
   },
   "allowScripts": {
     "esbuild@0.28.1": true

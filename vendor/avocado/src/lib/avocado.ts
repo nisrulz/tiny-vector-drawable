@@ -72,7 +72,7 @@ export class Avocado {
       const maxPassCount = this.options.multipass ? 10 : 1;
       let numPasses = 0;
       let prevResultSize = Number.POSITIVE_INFINITY;
-      const onFail = (error: string) => reject(error);
+      const onFail = (error: string) => reject(new Error(error));
       const onSuccess = (result: string) => {
         numPasses++;
         if (numPasses < maxPassCount && result.length < prevResultSize) {

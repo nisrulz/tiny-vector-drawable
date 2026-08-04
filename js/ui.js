@@ -3,8 +3,8 @@
 // All user content is rendered via textContent (no innerHTML).
 // ---------------------------------------------------------------------------
 import { items, resultsEl, toolbarEl, summaryEl, downloadAllBtn } from './state.js';
-import { STATUS } from './model.js';
-import { byteLength, formatPct, el, toast, safeFilename, triggerDownload } from './util.js';
+import { STATUS, summarizeItems } from './model.js';
+import { byteLength, formatPct, el, toast, triggerDownload, uniqueFilenames } from './util.js';
 import { makeZip } from './zip.js';
 
 // Lazily build the two tables (optimized + other) inside #results.
@@ -29,6 +29,7 @@ function ensureTables() {
       el('tr', {}, [
         el('th', { text: 'Other drawables' }),
         el('th', { text: 'Status' }),
+        el('th', { text: 'Details' }),
         el('th', { class: 'col-act', text: '' }),
       ]),
     ]),
@@ -131,29 +132,43 @@ export function downloadOne(item) {
 }
 
 export function updateToolbar() {
-  const done = items.filter((i) => !i.isPending());
-  const successful = items.filter((i) => i.status === STATUS.DONE);
   if (items.length === 0) {
     toolbarEl.hidden = true;
     return;
   }
   toolbarEl.hidden = false;
-  const pending = items.length - done.length;
+  const { pending, successful, failed } = summarizeItems(items);
+  const completed = successful + failed;
   summaryEl.textContent = pending > 0
-    ? `${done.length}/${items.length} processed…`
-    : `${items.length} file(s) · ${successful.length} optimized`;
-  downloadAllBtn.disabled = successful.length === 0;
+    ? `${completed}/${items.length} processed…`
+    : `${successful} optimized${failed ? ` · ${failed} failed` : ''}`;
+  downloadAllBtn.textContent = pending > 0
+    ? 'Processing…'
+    : `Download ${successful} optimized (.zip)`;
+  downloadAllBtn.disabled = pending > 0 || successful === 0;
 }
 
 export function downloadAll() {
+  const summary = summarizeItems(items);
+  if (summary.pending > 0) {
+    toast('Wait for all files to finish processing.');
+    return;
+  }
   const successful = items.filter((i) => i.status === STATUS.DONE);
   if (successful.length === 0) {
     toast('No optimized files to download.');
     return;
   }
-  const files = successful.map((i) => ({ name: safeFilename(i.name), data: i.optimized }));
-  const blob = makeZip(files);
-  triggerDownload(blob, 'optimized-vectors.zip');
+  const names = uniqueFilenames(successful.map((item) => item.name));
+  const files = successful.map((item, index) => ({
+    name: names[index],
+    data: item.optimized,
+  }));
+  try {
+    triggerDownload(makeZip(files), 'optimized-vectors.zip');
+  } catch {
+    toast('Could not create the ZIP file.');
+  }
 }
 
 export function clearAll() {

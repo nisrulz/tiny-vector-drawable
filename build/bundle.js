@@ -18,6 +18,14 @@ export const EOL = '\\n';
 export default { EOL: '\\n' };
 `;
 
+// SAX only uses StringDecoder for Node Buffer streams. Browser input is always
+// a string, but the CommonJS require still needs to resolve during bundling.
+const stringDecoderShim = `
+export class StringDecoder {
+  write(value) { return String(value); }
+}
+`;
+
 async function main() {
   await esbuild.build({
     entryPoints: [join(__dirname, 'entry.js')],
@@ -42,6 +50,14 @@ async function main() {
           }));
           build.onLoad({ filter: /.*/, namespace: 'os-shim' }, () => ({
             contents: osShim,
+            loader: 'js',
+          }));
+          build.onResolve({ filter: /^string_decoder$/ }, () => ({
+            path: 'string-decoder-shim',
+            namespace: 'string-decoder-shim',
+          }));
+          build.onLoad({ filter: /.*/, namespace: 'string-decoder-shim' }, () => ({
+            contents: stringDecoderShim,
             loader: 'js',
           }));
         },

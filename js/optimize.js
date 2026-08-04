@@ -1,68 +1,85 @@
 // ---------------------------------------------------------------------------
-// File intake and per-file optimization, driven through a bounded task queue.
+// File intake and per-file optimization, with CPU work isolated in a Worker.
 // ---------------------------------------------------------------------------
 import { items, isPrettyFormat } from './state.js';
 import { Item } from './model.js';
-import { TaskQueue } from './scheduler.js';
-import { optimizeVectorDrawable } from './optimizer.js';
 import { renderItem, updateToolbar } from './ui.js';
-import { isXmlFile, toast, uid } from './util.js';
+import { validateFileBatch } from './file-validation.js';
+import { toast, uid } from './util.js';
 
-// Low concurrency keeps the main thread responsive: the optimizer is
-// synchronous CPU work inside each task, so 2 at a time is plenty.
-const queue = new TaskQueue(2);
+const worker = new Worker(new URL('./optimizer-worker.js', import.meta.url), {
+  type: 'module',
+});
+
+worker.addEventListener('message', ({ data }) => {
+  const item = items.find((candidate) => candidate.id === data.id);
+  if (!item || item.token !== data.token) return;
+
+  if (data.type === 'started') item.markOptimizing();
+  else if (data.type === 'done') item.succeed(data.optimized);
+  else if (data.type === 'error') item.fail(data.error);
+  else return;
+
+  renderItem(item);
+  updateToolbar();
+});
 
 export async function handleFiles(fileList) {
-  const files = Array.from(fileList).filter(isXmlFile);
-  if (files.length === 0) {
-    toast('No .xml vector drawable files found.');
+  let files;
+  try {
+    files = validateFileBatch(fileList, {
+      count: items.length,
+      bytes: items.reduce((total, item) => total + item.sourceBytes, 0),
+    });
+  } catch (error) {
+    toast(error.message);
     return;
   }
+
   for (const file of files) {
-    const original = await file.text();
-    const item = new Item({ id: uid(), name: file.name, original });
+    let original;
+    try {
+      original = await file.text();
+    } catch {
+      toast(`Could not read ${file.name}.`);
+      continue;
+    }
+    const item = new Item({
+      id: uid(),
+      name: file.name,
+      original,
+      sourceBytes: file.size,
+    });
     items.push(item);
     renderItem(item);
-    queue.enqueue(() => processItem(item));
+    enqueue(item);
+    updateToolbar();
   }
-  updateToolbar();
 }
 
-// Optimize one item. The result is applied only if the item hasn't been
-// reset/re-queued meanwhile (e.g. the output format changed), which prevents
-// a stale write from an earlier run racing a newer one.
-async function processItem(item) {
-  const token = item.token;
-  item.markOptimizing();
-  renderItem(item);
-  try {
-    const optimized = await optimizeVectorDrawable(item.original, {
-      pretty: isPrettyFormat(),
-    });
-    if (item.token !== token) return;
-    item.succeed(optimized);
-  } catch (err) {
-    if (item.token !== token) return;
-    item.fail(err && err.message ? err.message : String(err));
-  }
-  // The item may have been cleared while it was optimizing — don't re-render it.
-  if (!items.includes(item)) return;
-  renderItem(item);
-  updateToolbar();
+function enqueue(item) {
+  worker.postMessage({
+    type: 'optimize',
+    id: item.id,
+    token: item.token,
+    xml: item.original,
+    pretty: isPrettyFormat(),
+  });
 }
 
 // Re-optimize every item (used when the output format changes).
 export function reoptimizeAll() {
   if (items.length === 0) return;
+  worker.postMessage({ type: 'clear' });
   for (const item of items) {
     item.reset();
     renderItem(item);
-    queue.enqueue(() => processItem(item));
+    enqueue(item);
   }
   updateToolbar();
 }
 
 // Drop queued (not yet started) optimizations.
 export function resetAll() {
-  queue.clear();
+  worker.postMessage({ type: 'clear' });
 }

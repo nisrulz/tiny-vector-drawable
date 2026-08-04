@@ -17,6 +17,9 @@ const CRC_TABLE = (() => {
   return table;
 })();
 
+const MAX_UINT16 = 0xffff;
+const MAX_UINT32 = 0xffffffff;
+
 export function crc32(buf) {
   let c = ~0;
   for (let i = 0; i < buf.length; i++) {
@@ -26,6 +29,9 @@ export function crc32(buf) {
 }
 
 export function makeZip(files) {
+  if (files.length > MAX_UINT16) {
+    throw new Error('ZIP files support at most 65,535 entries.');
+  }
   const encoder = new TextEncoder();
   const chunks = [];
   const central = [];
@@ -34,6 +40,8 @@ export function makeZip(files) {
   for (const f of files) {
     const nameBytes = encoder.encode(f.name);
     const data = f.data instanceof Uint8Array ? f.data : encoder.encode(f.data);
+    if (nameBytes.length > MAX_UINT16) throw new Error('ZIP filename is too long.');
+    if (data.length > MAX_UINT32) throw new Error('ZIP entry is too large.');
     const crc = crc32(data);
     const size = data.length;
 
@@ -77,9 +85,11 @@ export function makeZip(files) {
     central.push(cen);
 
     offset += local.length + data.length;
+    if (offset > MAX_UINT32) throw new Error('ZIP file is too large.');
   }
 
   const centralSize = central.reduce((s, c) => s + c.length, 0);
+  if (centralSize > MAX_UINT32) throw new Error('ZIP directory is too large.');
   const centralOffset = offset;
 
   const end = new Uint8Array(22);

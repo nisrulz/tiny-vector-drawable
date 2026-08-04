@@ -1,8 +1,6 @@
 // ---------------------------------------------------------------------------
-// Lazy wrapper around the avocado optimizer bundle.
-// The bundle (~49 KB minified) is loaded with a dynamic import so it never
-// blocks initial paint: the first optimization happens only after the user
-// drops a file, by which time the UI is already interactive.
+// Lazy wrapper around the avocado optimizer bundle. This module is used inside
+// the optimizer Worker, so parsing and path processing never block the UI.
 // ---------------------------------------------------------------------------
 let optimizerPromise = null;
 

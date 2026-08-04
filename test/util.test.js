@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { byteLength, formatPct, isXmlFile, safeFilename, uid } from '../js/util.js';
+import {
+  byteLength,
+  formatPct,
+  isXmlFile,
+  safeFilename,
+  uid,
+  uniqueFilenames,
+} from '../js/util.js';
 
 test('byteLength', () => {
   assert.equal(byteLength(''), 0);
@@ -38,4 +45,11 @@ test('uid returns unique non-empty strings', () => {
   const ids = new Set(Array.from({ length: 1000 }, () => uid()));
   assert.equal(ids.size, 1000);
   for (const id of ids) assert.ok(id.length > 0);
+});
+
+test('uniqueFilenames avoids case-insensitive ZIP collisions', () => {
+  assert.deepEqual(
+    uniqueFilenames(['icon.xml', 'icon.xml', 'ICON.XML', '../../icon.xml', 'readme']),
+    ['icon.xml', 'icon (2).xml', 'ICON (3).XML', 'icon (4).xml', 'readme'],
+  );
 });

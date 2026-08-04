@@ -1,23 +1,26 @@
 import { JsApi } from '../lib/jsapi';
 import { Plugin } from './_types';
-
-const regValidPath = /M\s*(?:[-+]?(?:\d*\.\d+|\d+(?:\.|(?!\.)))([eE][-+]?\d+)?(?!\d)\s*,?\s*){2}\D*\d/i;
+import { path2js } from './_path';
 
 /**
  * Remove hidden elements.
  */
 function fn(item: JsApi) {
-  if (!item.isElem() || item.hasAttr('android:name')) {
+  if (!item.isElem()) {
     return item;
   }
 
-  // Remove paths/clip-paths with empty/invalid path data strings.
-  if (
-    (item.isElem('path') || item.isElem('clip-path')) &&
-    (!item.hasAttr('android:pathData') ||
-      !regValidPath.test(item.attr('android:pathData').value))
-  ) {
-    return undefined;
+  if (item.isElem('path') || item.isElem('clip-path')) {
+    const pathData = item.attr('android:pathData');
+    if (!pathData || !pathData.value.trim()) {
+      if (item.hasAttr('android:name')) throw new Error('Missing android:pathData.');
+      return undefined;
+    }
+    const commands = path2js(item);
+    const drawsAnything = commands.some(
+      command => command.instruction.toLowerCase() !== 'm' && command.instruction !== 'z',
+    );
+    if (!drawsAnything && !item.hasAttr('android:name')) return undefined;
   }
 
   return item;

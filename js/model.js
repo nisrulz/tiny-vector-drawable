@@ -10,10 +10,11 @@ export const STATUS = Object.freeze({
 });
 
 export class Item {
-  constructor({ id, name, original }) {
+  constructor({ id, name, original, sourceBytes = 0 }) {
     this.id = id;
     this.name = name;
     this.original = original;
+    this.sourceBytes = sourceBytes;
     this.optimized = null;
     this.error = null;
     this.token = 0; // bumped on reset(); stale optimize results are dropped
@@ -50,4 +51,14 @@ export class Item {
     this.token += 1;
     this._status = STATUS.QUEUED;
   }
+}
+
+export function summarizeItems(items) {
+  const summary = { pending: 0, successful: 0, failed: 0 };
+  for (const item of items) {
+    if (item.isPending()) summary.pending += 1;
+    else if (item.status === STATUS.DONE) summary.successful += 1;
+    else summary.failed += 1;
+  }
+  return summary;
 }

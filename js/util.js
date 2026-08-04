@@ -53,7 +53,12 @@ let toastTimer = null;
 export function toast(msg) {
   let t = document.querySelector('.toast');
   if (!t) {
-    t = el('div', { class: 'toast' });
+    t = el('div', {
+      class: 'toast',
+      role: 'status',
+      'aria-live': 'polite',
+      'aria-atomic': 'true',
+    });
     document.body.appendChild(t);
   }
   t.textContent = msg;
@@ -66,6 +71,24 @@ export function safeFilename(name) {
   // Strip path separators and control chars; keep only a safe basename.
   const base = String(name).replace(/^.*[\\/]/, '').replace(/[\x00-\x1f\x7f]/g, '');
   return base || 'download.xml';
+}
+
+export function uniqueFilenames(names) {
+  const used = new Set();
+  return names.map((name) => {
+    const safe = safeFilename(name);
+    const dot = safe.lastIndexOf('.');
+    const stem = dot > 0 ? safe.slice(0, dot) : safe;
+    const extension = dot > 0 ? safe.slice(dot) : '';
+    let candidate = safe;
+    let suffix = 2;
+    while (used.has(candidate.toLowerCase())) {
+      candidate = `${stem} (${suffix})${extension}`;
+      suffix += 1;
+    }
+    used.add(candidate.toLowerCase());
+    return candidate;
+  });
 }
 
 export function triggerDownload(blob, filename) {
