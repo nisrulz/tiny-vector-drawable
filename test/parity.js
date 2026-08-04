@@ -1,5 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Load the bundled ESM module via dynamic import.
 async function loadBundle() {
@@ -11,15 +14,10 @@ async function loadBundle() {
 // avocado is no longer a runtime/dev dependency, so we assert against
 // known-good fixtures in test/fixtures instead of the live CLI.
 function readSample(name) {
-  return fs.readFileSync(
-    path.join(__dirname, 'samples', `${name}.xml`),
-    'utf8',
-  );
+  return readFileSync(join(__dirname, 'samples', `${name}.xml`), 'utf8');
 }
 function readExpected(name) {
-  return fs
-    .readFileSync(path.join(__dirname, 'fixtures', `${name}.expected.xml`), 'utf8')
-    .replace(/\n$/, '');
+  return readFileSync(join(__dirname, 'fixtures', `${name}.expected.xml`), 'utf8').replace(/\n$/, '');
 }
 
 const sampleNames = ['simple-vector', 'animated-vector'];
@@ -56,8 +54,8 @@ async function main() {
     console.log(`match: ${match}`);
     if (!match) {
       failures++;
-      fs.writeFileSync(path.join(__dirname, `${name}.actual.xml`), out);
-      fs.writeFileSync(path.join(__dirname, `${name}.expected-debug.xml`), expected);
+      writeFileSync(join(__dirname, `${name}.actual.xml`), out);
+      writeFileSync(join(__dirname, `${name}.expected-debug.xml`), expected);
       console.log(`diff written to test/${name}.actual.xml`);
     }
   }
@@ -78,7 +76,7 @@ async function main() {
     console.log(`max single pathData length: ${maxLen} (must be <= 3000)`);
     if (!guardOk) {
       failures++;
-      fs.writeFileSync(path.join(__dirname, 'long-path.actual.xml'), out);
+      writeFileSync(join(__dirname, 'long-path.actual.xml'), out);
       console.log('guard failed; written to test/long-path.actual.xml');
     }
   }
