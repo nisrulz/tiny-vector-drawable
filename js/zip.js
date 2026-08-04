@@ -2,13 +2,25 @@
 // Tiny store-only ZIP writer (no external dependency, keeps runtime lean).
 // Produces a valid uncompressed ZIP from a list of { name, data(Uint8Array) }.
 // ---------------------------------------------------------------------------
-export function crc32(buf) {
-  let c = ~0;
-  for (let i = 0; i < buf.length; i++) {
-    c ^= buf[i];
+
+// Precomputed CRC-32 (IEEE 802.3) lookup table: ~8x faster than the bitwise
+// loop, which matters when zipping hundreds of files at once.
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
     for (let k = 0; k < 8; k++) {
       c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1;
     }
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+export function crc32(buf) {
+  let c = ~0;
+  for (let i = 0; i < buf.length; i++) {
+    c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
   }
   return ~c >>> 0;
 }
@@ -29,7 +41,7 @@ export function makeZip(files) {
     const dv = new DataView(local.buffer);
     dv.setUint32(0, 0x04034b50, true);
     dv.setUint16(4, 20, true);
-    dv.setUint16(6, 0, true);
+    dv.setUint16(6, 0x0800, true); // UTF-8 filename flag
     dv.setUint16(8, 0, true); // store
     dv.setUint16(10, 0, true);
     dv.setUint16(12, 0, true);
@@ -47,7 +59,7 @@ export function makeZip(files) {
     cv.setUint32(0, 0x02014b50, true);
     cv.setUint16(4, 20, true);
     cv.setUint16(6, 20, true);
-    cv.setUint16(8, 0, true);
+    cv.setUint16(8, 0x0800, true); // UTF-8 filename flag
     cv.setUint16(10, 0, true);
     cv.setUint16(12, 0, true);
     cv.setUint16(14, 0, true);
