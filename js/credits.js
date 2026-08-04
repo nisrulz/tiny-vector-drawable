@@ -10,10 +10,12 @@ export function initCredits() {
   function openCredit() {
     creditPop.hidden = false;
     creditBtn.setAttribute('aria-expanded', 'true');
+    if (creditClose) creditClose.focus();
   }
-  function closeCredit() {
+  function closeCredit(restoreFocus = true) {
     creditPop.hidden = true;
     creditBtn.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) creditBtn.focus();
   }
 
   creditBtn.addEventListener('click', () => {
@@ -23,7 +25,7 @@ export function initCredits() {
   if (creditClose) creditClose.addEventListener('click', closeCredit);
   document.addEventListener('click', (e) => {
     if (creditPop.hidden) return;
-    if (!creditPop.contains(e.target) && !creditBtn.contains(e.target)) closeCredit();
+    if (!creditPop.contains(e.target) && !creditBtn.contains(e.target)) closeCredit(false);
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !creditPop.hidden) closeCredit();

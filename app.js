@@ -38,7 +38,7 @@ dropzone.addEventListener('drop', (e) => {
 });
 
 // Paste from clipboard (e.g. copied file).
-window.addEventListener('paste', async (e) => {
+window.addEventListener('paste', (e) => {
   const itemsClip = e.clipboardData && e.clipboardData.files;
   if (itemsClip && itemsClip.length) handleFiles(itemsClip);
 });
@@ -60,6 +60,8 @@ updateToolbar();
 // Register service worker for offline / installable PWA.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').catch((error) => {
+      console.warn('Offline mode is unavailable.', error);
+    });
   });
 }
