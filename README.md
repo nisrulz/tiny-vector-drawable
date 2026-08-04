@@ -20,7 +20,7 @@ Powered by [avocado](https://github.com/alexjlockwood/avocado) compiled for the 
 make serve
 ```
 
-Then open `http://localhost:3000` in your browser. A static server is required for ES modules and the service worker.
+Then open `http://127.0.0.1:5173` in your browser (or set `PORT`). A static server is required for ES modules and the service worker.
 
 ---
 
