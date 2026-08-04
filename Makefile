@@ -22,6 +22,6 @@ verify: ## Run unit tests then the parity test
 	npm run test:all
 
 install: ## Install dependencies
-	npm install
+	npm ci --ignore-scripts
 
 all: install build verify ## Install, build, and verify everything

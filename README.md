@@ -11,8 +11,13 @@ Powered by [avocado](https://github.com/alexjlockwood/avocado) compiled for the 
 ## Quick start
 
 1. Open the site (GitHub Pages or run locally).
-2. Drag `.xml` vector drawable files onto the drop zone, or click to browse.
-3. Pick pretty or minified output, then download.
+2. Choose minified output for the smallest file, or pretty output for readable XML.
+3. Drag `.xml` vector drawable files onto the drop zone, or click to browse.
+4. Download one result or wait for the batch and download the `.zip`.
+
+A batch can contain up to 100 files, 5 MB per file, and 25 MB in total. The
+layout works on mobile, and duplicate filenames get safe, unique names in the
+ZIP.
 
 ## Run locally
 

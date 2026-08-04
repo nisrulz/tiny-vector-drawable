@@ -15,9 +15,10 @@ js/
   util.js         el(), toast(), uid(), safeFilename(), triggerDownload(), format helpers
   zip.js          store-only ZIP writer (makeZip) with table-driven crc32; no dependency
   model.js        Item class: state machine (queued/optimizing/done/error)
-  scheduler.js    TaskQueue: bounded-concurrency async queue
-  optimizer.js    Lazy dynamic-import wrapper for the avocado bundle
-  optimize.js     handleFiles(), processItem(), reoptimizeAll(), resetAll()
+  file-validation.js  File count and byte limits
+  optimizer.js    Lazy dynamic-import wrapper used by the Worker
+  optimizer-worker.js Serial optimizer queue off the main thread
+  optimize.js     handleFiles(), reoptimizeAll(), resetAll()
   ui.js           renderItem(), updateToolbar(), download*, clearAll()
   theme.js        initTheme(), light/dark toggle persisted in localStorage
   credits.js      initCredits(), footer attribution popup
@@ -32,20 +33,22 @@ manifest.webmanifest, icons/   PWA metadata
 
 ## Module rules
 - ES modules (`"type": "module"`). `state.js` is the single source of shared DOM
-  refs and `items`. Pure logic (model, scheduler, zip, util) stays DOM-free so it
+  refs and `items`. Pure logic (model, file validation, zip, util) stays DOM-free so it
   is unit-testable in Node.
 - Every module imports its dependencies explicitly; no globals. No import cycles.
 - Never use `innerHTML` with user data. Render via `el()` or `textContent` only.
 - Filenames flow through `safeFilename()` before download or zip entry (Zip-Slip safe).
 - No network calls carry user files. Only same-origin static asset fetches (SW).
-- The optimizer bundle is loaded lazily (dynamic import) so it never blocks startup.
+- The service worker precaches the optimizer bundle. A module Worker imports it
+  lazily so parsing and optimization never block the main thread.
 
 ## Common tasks
 - Add UI behavior: extend the matching `js/*.js` module; wire in `app.js`.
 - Add a stylesheet: edit the `<link>` list in `index.html` and the `ASSETS`
   array in `sw.js` (keep both in sync or offline install breaks).
 - Change a cached asset: bump `CACHE` (`tvd-vN`) in `sw.js`.
-- Rebuild optimizer: `npm install && npm run build` then `npm run test:parity`.
+- Rebuild optimizer: `npm ci --ignore-scripts && npm run build`, then run
+  `npm run test:parity` and check that the committed bundle matches.
 - Add a unit test: put a `*.test.js` in `test/` (Node built-in test runner,
   `node --test`). Pure logic lives in DOM-free modules precisely so this works.
 - Local serve (ES modules + SW need http): `npm run serve` (zero-dep static
@@ -57,7 +60,8 @@ manifest.webmanifest, icons/   PWA metadata
   matches the committed fixtures. `npm run test:all` (or `make verify`) runs both.
 - Serve and load `index.html`; confirm 200 for css/*, js/*, app.js, lib/*.
 - Keep CSS brace counts balanced per file; keep `sw.js` ASSETS in sync with `index.html`.
-- `npm audit` should report 0 vulnerabilities (esbuild is the only dev dependency).
+- `npm audit` should report 0 vulnerabilities. Build dependencies are pinned in
+  the root lockfile.
 
 ## Constraints
 - MIT licensed. avocado attribution stays in THIRD_PARTY_LICENSES.md and footer popup.
