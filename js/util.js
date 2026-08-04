@@ -3,19 +3,30 @@
 // All user-controlled content is written via textContent / setAttribute,
 // never innerHTML, so the app is safe from injection.
 // ---------------------------------------------------------------------------
-export function byteLength(str) {
-  return new TextEncoder().encode(str).length;
-}
+const encoder = new TextEncoder();
 
-export function formatBytes(n) {
-  if (n < 1024) return `${n} B`;
-  return `${(n / 1024).toFixed(2)} KB`;
+export function byteLength(str) {
+  return encoder.encode(str).length;
 }
 
 export function formatPct(saved) {
   if (saved > 0) return `${saved.toFixed(1)}% smaller`;
   if (saved < 0) return `${Math.abs(saved).toFixed(1)}% larger`;
   return 'no change';
+}
+
+export function uid() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `f${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function isXmlFile(file) {
+  const name = file.name.toLowerCase();
+  return (
+    name.endsWith('.xml') ||
+    file.type === 'application/xml' ||
+    file.type === 'text/xml'
+  );
 }
 
 export function el(tag, props = {}, children = []) {
@@ -25,6 +36,8 @@ export function el(tag, props = {}, children = []) {
     else if (k === 'text') node.textContent = v;
     else if (k.startsWith('on') && typeof v === 'function') {
       node.addEventListener(k.slice(2).toLowerCase(), v);
+    } else if (typeof v === 'boolean') {
+      node[k] = v; // boolean attrs via property, so `disabled: false` stays enabled
     } else if (v !== null && v !== undefined) {
       node.setAttribute(k, v);
     }

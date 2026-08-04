@@ -2,16 +2,10 @@
 // Rendering of results as compact single-line table rows (no XML preview).
 // All user content is rendered via textContent (no innerHTML).
 // ---------------------------------------------------------------------------
-import {
-  items,
-  resultsEl,
-  toolbarEl,
-  summaryEl,
-  downloadAllBtn,
-} from './state.js';
-import { byteLength, formatBytes, formatPct, el, toast, safeFilename, triggerDownload } from './util.js';
+import { items, resultsEl, toolbarEl, summaryEl, downloadAllBtn } from './state.js';
+import { STATUS } from './model.js';
+import { byteLength, formatPct, el, toast, safeFilename, triggerDownload } from './util.js';
 import { makeZip } from './zip.js';
-import { processItem } from './optimize.js';
 
 // Lazily build the two tables (optimized + other) inside #results.
 function ensureTables() {
@@ -52,63 +46,72 @@ function otherBody() {
   return document.getElementById('otherBody');
 }
 
-export function renderItem(item) {
-  ensureTables();
-  const row = el('tr', { id: item.id, class: 'row-pending' }, [
-    el('td', { class: 'cell-name', text: item.name }),
-    el('td', { class: 'cell-saved' }, [el('span', { class: 'badge badge-warn', text: 'Queued' })]),
-    el('td', { class: 'cell-size', text: '…' }),
-    el('td', { class: 'col-act' }, [
-      el('button', {
-        class: 'btn btn-ghost btn-sm',
-        type: 'button',
-        text: 'Download',
-        disabled: true,
-        onclick: () => downloadOne(item),
-      }),
-    ]),
-  ]);
-  optBody().appendChild(row);
+// Build a fresh <tr> from the item's current state.
+function buildRow(item) {
+  const rowClass =
+    item.status === STATUS.DONE
+      ? 'row-ok'
+      : item.status === STATUS.ERROR
+        ? 'row-err'
+        : 'row-pending';
+
+  const downloadBtn = el('button', {
+    class: 'btn btn-ghost btn-sm',
+    type: 'button',
+    text: 'Download',
+    disabled: item.status !== STATUS.DONE,
+    onclick: () => downloadOne(item),
+  });
+
+  switch (item.status) {
+    case STATUS.DONE: {
+      const origBytes = byteLength(item.original);
+      const optBytes = byteLength(item.optimized);
+      const saved = origBytes === 0 ? 0 : (100 * (origBytes - optBytes)) / origBytes;
+      const cls = saved > 0 ? 'badge-good' : saved < 0 ? 'badge-bad' : 'badge-warn';
+      return el('tr', { id: item.id, class: rowClass }, [
+        el('td', { class: 'cell-name', text: item.name }),
+        el('td', { class: 'cell-saved' }, [
+          el('span', { class: `badge ${cls}`, text: formatPct(saved) }),
+        ]),
+        el('td', { class: 'cell-size', text: `${origBytes} → ${optBytes} bytes` }),
+        el('td', { class: 'col-act' }, [downloadBtn]),
+      ]);
+    }
+    case STATUS.ERROR:
+      return el('tr', { id: item.id, class: rowClass }, [
+        el('td', { class: 'cell-name', text: item.name }),
+        el('td', { class: 'cell-saved' }, [
+          el('span', { class: 'badge badge-bad', text: 'Error' }),
+        ]),
+        el('td', { class: 'cell-size', text: item.error || 'Could not optimize' }),
+        el('td', { class: 'col-act' }, [downloadBtn]),
+      ]);
+    default: {
+      const label = item.status === STATUS.OPTIMIZING ? 'Optimizing…' : 'Queued';
+      return el('tr', { id: item.id, class: rowClass }, [
+        el('td', { class: 'cell-name', text: item.name }),
+        el('td', { class: 'cell-saved' }, [
+          el('span', { class: 'badge badge-warn', text: label }),
+        ]),
+        el('td', { class: 'cell-size', text: '…' }),
+        el('td', { class: 'col-act' }, [downloadBtn]),
+      ]);
+    }
+  }
 }
 
-export function updateItemCard(item) {
-  const row = document.getElementById(item.id);
-  if (!row) return;
-  const savedCell = row.querySelector('.cell-saved');
-  const sizeCell = row.querySelector('.cell-size');
-  const dlBtn = row.querySelector('button');
+// Render (or re-render in place) one item's row.
+export function renderItem(item) {
+  ensureTables();
+  const row = buildRow(item);
+  const existing = document.getElementById(item.id);
+  if (existing) existing.replaceWith(row);
+  else optBody().appendChild(row);
 
-  // Re-queued (e.g. output format changed) — show pending state.
-  if (item.ok === false && !item.error) {
-    row.className = 'row-pending';
-    savedCell.textContent = '';
-    savedCell.appendChild(el('span', { class: 'badge badge-warn', text: 'Optimizing…' }));
-    sizeCell.textContent = '…';
-    dlBtn.disabled = true;
-    optBody().appendChild(row);
-    return;
-  }
-
-  if (item.ok) {
-    const origBytes = byteLength(item.original);
-    const optBytes = byteLength(item.optimized);
-    const saved = origBytes === 0 ? 0 : (100 * (origBytes - optBytes)) / origBytes;
-    const cls = saved > 0 ? 'badge-good' : saved < 0 ? 'badge-bad' : 'badge-warn';
-    row.className = 'row-ok';
-    savedCell.textContent = '';
-    savedCell.appendChild(el('span', { class: `badge ${cls}`, text: formatPct(saved) }));
-    sizeCell.textContent = `${origBytes} → ${optBytes} bytes`;
-    dlBtn.disabled = false;
-    optBody().appendChild(row);
-  } else {
-    // Move the errored file into the "Other drawables" table.
-    row.className = 'row-err';
-    savedCell.textContent = '';
-    savedCell.appendChild(el('span', { class: 'badge badge-bad', text: 'Error' }));
-    sizeCell.textContent = item.error || 'Could not optimize';
-    dlBtn.disabled = true;
-    otherBody().appendChild(row);
-  }
+  // Errored rows live in the "Other drawables" table.
+  const target = item.status === STATUS.ERROR ? otherBody() : optBody();
+  if (row.parentNode !== target) target.appendChild(row);
   syncOtherTable();
 }
 
@@ -119,7 +122,7 @@ function syncOtherTable() {
 }
 
 export function downloadOne(item) {
-  if (!item.ok) {
+  if (item.status !== STATUS.DONE) {
     toast('Nothing to download for this file.');
     return;
   }
@@ -128,8 +131,8 @@ export function downloadOne(item) {
 }
 
 export function updateToolbar() {
-  const done = items.filter((i) => i.ok || i.error);
-  const successful = items.filter((i) => i.ok);
+  const done = items.filter((i) => !i.isPending());
+  const successful = items.filter((i) => i.status === STATUS.DONE);
   if (items.length === 0) {
     toolbarEl.hidden = true;
     return;
@@ -143,7 +146,7 @@ export function updateToolbar() {
 }
 
 export function downloadAll() {
-  const successful = items.filter((i) => i.ok);
+  const successful = items.filter((i) => i.status === STATUS.DONE);
   if (successful.length === 0) {
     toast('No optimized files to download.');
     return;

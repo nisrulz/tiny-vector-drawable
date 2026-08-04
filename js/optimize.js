@@ -1,9 +1,16 @@
 // ---------------------------------------------------------------------------
-// File intake and per-file optimization.
+// File intake and per-file optimization, driven through a bounded task queue.
 // ---------------------------------------------------------------------------
-import { items, formatSelect, currentFormat, isXmlFile, optimizeVectorDrawable } from './state.js';
-import { renderItem, updateItemCard, updateToolbar } from './ui.js';
-import { toast } from './util.js';
+import { items, isPrettyFormat } from './state.js';
+import { Item } from './model.js';
+import { TaskQueue } from './scheduler.js';
+import { optimizeVectorDrawable } from './optimizer.js';
+import { renderItem, updateToolbar } from './ui.js';
+import { isXmlFile, toast, uid } from './util.js';
+
+// Low concurrency keeps the main thread responsive: the optimizer is
+// synchronous CPU work inside each task, so 2 at a time is plenty.
+const queue = new TaskQueue(2);
 
 export async function handleFiles(fileList) {
   const files = Array.from(fileList).filter(isXmlFile);
@@ -12,30 +19,35 @@ export async function handleFiles(fileList) {
     return;
   }
   for (const file of files) {
-    const id = `f${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const original = await file.text();
-    const item = { id, name: file.name, original, optimized: null, ok: false, error: null };
+    const item = new Item({ id: uid(), name: file.name, original });
     items.push(item);
     renderItem(item);
-    // Defer heavy optimization so the UI can paint first.
-    setTimeout(() => processItem(item), 0);
+    queue.enqueue(() => processItem(item));
   }
   updateToolbar();
 }
 
-export async function processItem(item) {
-  const card = document.getElementById(item.id);
-  const status = card?.querySelector('.card-status');
-  if (status) status.textContent = 'Optimizing…';
+// Optimize one item. The result is applied only if the item hasn't been
+// reset/re-queued meanwhile (e.g. the output format changed), which prevents
+// a stale write from an earlier run racing a newer one.
+async function processItem(item) {
+  const token = item.token;
+  item.markOptimizing();
+  renderItem(item);
   try {
-    const optimized = await optimizeVectorDrawable(item.original, { pretty: currentFormat() });
-    item.optimized = optimized;
-    item.ok = true;
+    const optimized = await optimizeVectorDrawable(item.original, {
+      pretty: isPrettyFormat(),
+    });
+    if (item.token !== token) return;
+    item.succeed(optimized);
   } catch (err) {
-    item.error = err && err.message ? err.message : String(err);
-    item.ok = false;
+    if (item.token !== token) return;
+    item.fail(err && err.message ? err.message : String(err));
   }
-  updateItemCard(item);
+  // The item may have been cleared while it was optimizing — don't re-render it.
+  if (!items.includes(item)) return;
+  renderItem(item);
   updateToolbar();
 }
 
@@ -43,11 +55,14 @@ export async function processItem(item) {
 export function reoptimizeAll() {
   if (items.length === 0) return;
   for (const item of items) {
-    item.ok = false;
-    item.optimized = null;
-    item.error = null;
-    updateItemCard(item);
-    setTimeout(() => processItem(item), 0);
+    item.reset();
+    renderItem(item);
+    queue.enqueue(() => processItem(item));
   }
   updateToolbar();
+}
+
+// Drop queued (not yet started) optimizations.
+export function resetAll() {
+  queue.clear();
 }

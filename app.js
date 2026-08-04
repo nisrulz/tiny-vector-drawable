@@ -2,7 +2,7 @@
 // App entry point: wires state, file intake, UI, theme, and credits together.
 // ---------------------------------------------------------------------------
 import { items, dropzone, fileInput, formatSelect, downloadAllBtn, clearAllBtn } from './js/state.js';
-import { handleFiles, reoptimizeAll } from './js/optimize.js';
+import { handleFiles, reoptimizeAll, resetAll } from './js/optimize.js';
 import { updateToolbar, downloadAll, clearAll } from './js/ui.js';
 import { initTheme } from './js/theme.js';
 import { initCredits } from './js/credits.js';
@@ -44,7 +44,10 @@ window.addEventListener('paste', async (e) => {
 });
 
 downloadAllBtn.addEventListener('click', downloadAll);
-clearAllBtn.addEventListener('click', clearAll);
+clearAllBtn.addEventListener('click', () => {
+  resetAll(); // drop queued optimizations before the UI is cleared
+  clearAll();
+});
 
 // Re-optimize all items when the output format changes.
 formatSelect.addEventListener('change', reoptimizeAll);
