@@ -1,4 +1,4 @@
-// Vendored, locally-modified copy of avocado (see vendor/avocado + THIRD_PARTY_LICENSES.md).
+// Vendored, locally-modified copy of avocado (see vendor/avocado + documentation/third-party-licenses.md).
 import { Avocado, plugins } from '../vendor/avocado/src/lib/avocado.js';
 
 // Batch plugins the same way avocado does internally (consecutive same-type

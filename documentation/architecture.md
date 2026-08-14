@@ -1,9 +1,8 @@
-# Developer Documentation
+# Architecture
 
-How this thing is built, how avocado gets bundled for the browser, and where to
-poke around when you need to change something.
+How the app is laid out, and how avocado gets bundled for the browser.
 
-## Architecture
+## Layout
 
 ```
 tiny-vector-drawable/
@@ -39,12 +38,16 @@ tiny-vector-drawable/
 ├── test/
 │   ├── parity.js           # Checks bundle output matches committed fixtures
 │   ├── model.test.js       # Item state machine
+│   ├── file-validation.test.js # File count and byte limits
 │   ├── optimizer-security.test.js # XML and path validation
 │   ├── optimizer-worker.test.js   # Worker queue behavior
 │   ├── pwa.test.js         # Service worker cache and asset list
 │   ├── dev-server.test.js  # Local server and security headers
+│   ├── html.test.js        # index.html content and security policies
 │   ├── zip.test.js         # ZIP structure and boundary checks
-│   └── util.test.js        # Formatting and filename helpers
+│   ├── util.test.js        # Formatting and filename helpers
+│   ├── fixtures/           # Expected bundle output for parity tests
+│   └── samples/            # Input vectors for optimizer tests
 └── package.json
 ```
 
@@ -58,7 +61,8 @@ browser build keeps the core and drops the wrapper.
 The upstream avocado repository was archived (read-only) on Aug 7, 2026, so
 this project vendors the source instead of depending on a package that can no
 longer be updated. Vendoring keeps the build reproducible and lets this
-repository carry its own fixes (see `THIRD_PARTY_LICENSES.md`).
+repository carry its own fixes (see
+[third-party-licenses.md](third-party-licenses.md)).
 
 `build/entry.js` imports only `dist/lib/avocado.js` and exposes:
 
@@ -75,51 +79,6 @@ a string, so the shim does not process user XML.
 The result, `lib/avocado.bundle.js` (~49 KB minified, no runtime deps), is
 committed so the site works at deploy time with no build step.
 
-## Run locally
-
-```bash
-make serve         # serves the folder over http (npm run serve)
-```
-
-A static server is required because the app uses ES modules and a service
-worker. Opening `index.html` from `file://` will not register the worker.
-
-The server is `scripts/dev-server.mjs`, a small zero-dependency Node script
-(no `serve`/`npx` download needed). It binds to `127.0.0.1` only, rejects paths
-that escape the project root, and serves correct MIME types for every asset
-including `text/javascript` for ES modules and `application/manifest+json`.
-Override the port with `PORT` (default `5173`).
-
-## Build
-
-```bash
-make install       # clean install from package-lock.json, without lifecycle scripts
-make build         # regenerates lib/avocado.bundle.js
-make all           # install, build, and verify everything
-```
-
-The public npm lockfile pins `esbuild` and SAX. `make install` uses
-`npm ci --ignore-scripts` so local and CI installs use the same dependency tree
-without running package lifecycle scripts. After changing either dependency,
-run `make build` and `make test:all` again.
-
-CI performs the clean install, rebuilds the bundle, runs every test, and fails
-if the rebuilt `lib/avocado.bundle.js` differs from the committed file. It also
-runs `npm audit` and verifies package registry signatures. Workflow actions are
-pinned to full commit hashes.
-
-## Test
-
-Two layers, both runnable with `make verify` (or `npm run test:all`):
-
-1. **Unit tests** (`npm test`, `node --test test/*.test.js`): file limits, the
-   `Item` state machine, Worker messages, optimizer validation, ZIP boundaries,
-   PWA assets, the local server, and utility helpers.
-2. **Parity test** (`npm run test:parity`): optimizes committed samples with
-   the bundled browser build and asserts byte-identical output against the
-   fixtures in `test/fixtures`. If it breaks after an esbuild upgrade, the
-   browser shim or batching logic in `build/entry.js` likely needs a tweak.
-
 ## How the app calls the optimizer
 
 The service worker precaches the ~49 KB optimizer bundle for reliable offline
@@ -132,37 +91,6 @@ keeps CPU-heavy XML and path processing off the main thread without running
 several optimizers at once. A per-item token drops stale results if the output
 format changes during a batch, and queued work is replaced with the new format.
 
-## Security
-
-XSS is handled by never using `innerHTML`. All user content (original/optimized
-XML, filenames, errors) goes to the DOM through `textContent` or `setAttribute`.
-
-Downloads are safe too. `safeFilename()` strips path separators and control
-characters from filenames in single downloads and `.zip` entries. ZIP names
-are made unique without case-sensitive collisions. The writer rejects classic
-ZIP count, filename, entry size, and archive size overflows.
-
-Input is limited to 100 files, 5 MB per file, and 25 MB for the current batch.
-The XML parser accepts only VectorDrawable and AnimatedVectorDrawable roots. It
-rejects DOCTYPE declarations, text and CDATA nodes, excessive nesting, excessive
-element counts, and invalid path commands or arc flags. These checks bound local
-resource use and prevent malformed paths from being silently removed.
-
-No external requests. The app never sends user data over the network. The only
-fetches are same-origin static assets for the service worker.
-
-No secrets, no backend.
-
-## Service worker
-
-`sw.js` precaches the app shell, Worker, and optimizer bundle. It serves
-same-origin `GET` requests from the named cache first, then stores successful
-network responses. Activation deletes only older caches with the `tvd-` prefix,
-so it does not touch caches owned by another app on the same origin.
-
-Bump the `CACHE` constant when a cached asset changes. Keep `ASSETS` in sync
-with `index.html` and all static module imports, or offline use will break.
-
 ## Performance and bandwidth
 
 - The optimizer bundle is ~49 KB minified and parsed lazily in a Worker.
@@ -171,6 +99,3 @@ with `index.html` and all static module imports, or offline use will break.
 - Optimization runs one file at a time off the main thread, so bulk drops do not
   block interaction or create competing CPU-heavy jobs.
 - Icons are small. The SVG icon is used wherever possible.
-
-That's it. The rest is just wiring in `app.js` and keeping the SW asset list in
-sync.

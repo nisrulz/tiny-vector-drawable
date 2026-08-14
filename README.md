@@ -27,6 +27,27 @@ make serve
 
 Then open `http://127.0.0.1:5173` in your browser (or set `PORT`). A static server is required for ES modules and the service worker.
 
+## For developers
+
+Examples:
+
+```bash
+PORT=8080 make serve              # serve on a custom port
+node --test test/zip.test.js      # run one test file
+make build && make verify         # rebuild the bundle, then verify it
+```
+
+## Docs
+
+- [About](documentation/about.md)
+- [Privacy](documentation/privacy.md)
+- [Deployment](documentation/deployment.md)
+- [Development](documentation/development.md)
+- [Architecture](documentation/architecture.md)
+- [Security](documentation/security.md)
+- [Service worker](documentation/service-worker.md)
+- [License](documentation/license.md) · [Third-party licenses](documentation/third-party-licenses.md)
+
 ---
 
-[Features & privacy](ABOUT.md) · [Build & architecture](DEVELOPMENT.md) · [MIT licensed](LICENSE)
+[MIT licensed](LICENSE)
