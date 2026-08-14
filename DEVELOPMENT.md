@@ -55,6 +55,11 @@ a pure string-in/string-out function. The CLI wrapper uses Node built-ins
 (`fs`, `path`, `commander`, `os.EOL`) that don't exist in a browser. So the
 browser build keeps the core and drops the wrapper.
 
+The upstream avocado repository was archived (read-only) on Aug 7, 2026, so
+this project vendors the source instead of depending on a package that can no
+longer be updated. Vendoring keeps the build reproducible and lets this
+repository carry its own fixes (see `THIRD_PARTY_LICENSES.md`).
+
 `build/entry.js` imports only `dist/lib/avocado.js` and exposes:
 
 ```js

@@ -8,10 +8,11 @@ and copyright notice are reproduced below as required by its terms.
 The vector drawable optimization engine bundled in `lib/avocado.bundle.js` is
 derived from [avocado](https://github.com/alexjlockwood/avocado) by Alex
 Lockwood. It is a **locally modified, vendored copy** (snapshot of the source
-in `vendor/avocado/`, built to the browser bundle via esbuild). The original
-MIT-licensed source is unmaintained, so the source has been vendored into this
-repository and patched locally. The original copyright and license notice below
-are preserved as required by the MIT License. Local modifications:
+in `vendor/avocado/`, built to the browser bundle via esbuild). The upstream
+repository was archived (read-only) on Aug 7, 2026, so its code is vendored
+into this repository and patched locally. The original copyright and license
+notice below are preserved as required by the MIT License. Local
+modifications:
 
 - `vendor/avocado/src/plugins/mergePaths.ts`: added a guard that prevents
   merging sibling paths when the combined `android:pathData` would exceed ~3000
@@ -32,8 +33,9 @@ are preserved as required by the MIT License. Local modifications:
 The copy in `vendor/avocado/` was snapshotted from the upstream `v1.0.0` tag at
 commit
 [`bba21b828073bac745649b9c46f6bdb7b15e5cc8`](https://github.com/alexjlockwood/avocado/commit/bba21b828073bac745649b9c46f6bdb7b15e5cc8).
-To refresh, re-snapshot from a newer upstream commit and re-apply the local
-modifications listed above, then run `make build` and `make verify`.
+The upstream repository was archived on Aug 7, 2026 and is now read-only, so
+there are no newer upstream commits to refresh from. Because the code lives in
+this repository, it can still be built and fixed despite the archive.
 
 It is distributed under the MIT License.
 

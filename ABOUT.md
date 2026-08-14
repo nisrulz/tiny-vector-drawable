@@ -61,4 +61,5 @@ This project is MIT licensed, see [LICENSE](LICENSE).
 The optimizer in `lib/avocado.bundle.js` is avocado by Alex Lockwood, MIT
 licensed. Its notice and license text are in
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). Same optimizer compiled with
-esbuild, so output matches the CLI.
+esbuild, so output matches the CLI. The upstream avocado repository was archived
+(read-only) on Aug 7, 2026, so the code is vendored in this repository.
